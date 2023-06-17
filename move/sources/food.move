@@ -83,9 +83,9 @@ module addr::food01 {
             energy_joules: 3529000,
             aesthetic_profile: AestheticProfile {
                 color: Color {
-                    r: 255,
-                    g: 255,
-                    b: 255,
+                    r: 245,
+                    g: 237,
+                    b: 243,
                 },
                 texture: string::utf8(b"Smooth"),
             },
@@ -100,7 +100,7 @@ module addr::food01 {
         let potato_ = Vegetable {
             name: string::utf8(b"Potato"),
             energy_joules: 5220000,
-            fibre_grams: 100,
+            fibre_grams: 80,
             aesthetic_profile: AestheticProfile {
                 color: Color {
                     r: 199,

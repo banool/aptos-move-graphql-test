@@ -2,9 +2,9 @@ import type { CodegenConfig } from "@graphql-codegen/cli";
 
 const config: CodegenConfig = {
   overwrite: true,
-  schema: "src/generated/food/schema.graphql",
+  schema: "src/food/generated/schema.graphql",
   generates: {
-    "src/generated/food/types.ts": {
+    "src/food/generated/types.ts": {
       config: {
         emitLegacyCommonJSImports: false,
         namingConvention: "keep",

@@ -4,7 +4,7 @@
 export const networks = {
   mainnet: "https://fullnode.mainnet.aptoslabs.com/",
   testnet: "https://fullnode.testnet.aptoslabs.com",
-  local: "http://localhost:8080",
+  local: "http://127.0.0.1:8080",
 };
 
 export type NetworkName = keyof typeof networks;

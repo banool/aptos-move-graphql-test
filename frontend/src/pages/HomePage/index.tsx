@@ -1,100 +1,285 @@
-import { useWallet } from "@aptos-labs/wallet-adapter-react";
-import { Box, Flex, Text } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
-import { useGlobalState } from "../../GlobalState";
-import { useSearchParams } from "react-router-dom";
-
-export type ActiveTontine = {
-  address: string;
-};
+import {
+  Box,
+  Flex,
+  Text,
+  FormControl,
+  FormLabel,
+  Input,
+  Heading,
+  Divider,
+} from "@chakra-ui/react";
+import { useForm } from "react-hook-form";
+import { useGetAccountResource } from "../../api/hooks/useGetAccountResource";
+import {
+  _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Meal,
+  _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__MealStore,
+  _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Protein,
+  _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Vegetable,
+} from "../../food/generated/types";
 
 export const HomePage = () => {
-  const { network } = useWallet();
-  const [state, _] = useGlobalState();
+  const {
+    register,
+    getValues,
+    formState: { isValid },
+  } = useForm();
 
-  // This state tracks which tontine we're actively viewing. The value we store here
-  // is the tontine address.
-  const [activeTontine, setActiveTontine] = useState<ActiveTontine | null>(
-    null,
+  const {
+    data: mealStoreData,
+    isLoading: mealStoreIsLoading,
+    error: mealStoreError,
+  } = useGetAccountResource(
+    getValues("account_address"),
+    `${getValues("module_address")}::food01::MealStore`,
+    { enabled: isValid },
   );
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  const mealStore:
+    | _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__MealStore
+    | undefined = mealStoreData ? mealStoreData.resource.jsonDataV1 : undefined;
 
-  const [hasSetTontineOnFirstLoad, setHasSetTontineOnFirstLoad] =
-    useState(false);
+  const mealStoreIndex = getValues("meal_store_index") || 0;
+  const mealAddress = mealStore?.meals[mealStoreIndex].inner;
 
-  // This hook manages keeping the tontine and URL state in sync.
-  useEffect(() => {
-    const params: any = [];
-    searchParams.forEach((value, key) => {
-      params.push([key, value]);
-    });
-    if (!hasSetTontineOnFirstLoad) {
-      // There is a tontine in the URL and we haven't done the initial load, load up
-      // a tontine if possible based on the url.
-      setHasSetTontineOnFirstLoad(true);
-      const urlTontineAddress = searchParams.get("tontine");
-      if (urlTontineAddress === null) {
-        // There is no tontine in the URL. Do nothing.
-        return;
-      }
-      // Set the active tontine to the address we have.
-      setActiveTontine({ address: urlTontineAddress });
-    } else {
-      // We've already done the initial load. From this point on we update the URL
-      // based on activeTontine and not vice versa.
-      if (activeTontine === null) {
-        // There is no active tontine, remove the tontine from the URL.
-        searchParams.delete("tontine");
-        setSearchParams(searchParams);
-      } else {
-        // There is an active tontine, update the URL.
-        searchParams.set("tontine", activeTontine.address);
-        setSearchParams(searchParams);
-      }
-    }
-  }, [
-    hasSetTontineOnFirstLoad,
-    activeTontine,
-    setActiveTontine,
-    searchParams,
-    setSearchParams,
-  ]);
+  const myForm = (
+    <form>
+      <FormControl>
+        <FormLabel paddingTop={3} htmlFor="module_address">
+          Module address
+        </FormLabel>
+        <Input
+          id="module_address"
+          placeholder="The account that contains the module."
+          {...register("module_address", {
+            required: "Must specify module address",
+            minLength: { value: 2, message: "Minimum length should be 2" },
+          })}
+        />
+      </FormControl>
+      <FormControl>
+        <FormLabel paddingTop={3} htmlFor="account_address">
+          Account address
+        </FormLabel>
+        <Input
+          id="account_address"
+          placeholder="The account that contains the MealStore."
+          {...register("account_address", {
+            required: "Must specify account address",
+            minLength: { value: 2, message: "Minimum length should be 2" },
+          })}
+        />
+      </FormControl>
+      <FormControl>
+        <FormLabel paddingTop={3} htmlFor="meal_store_index">
+          MealStore index
+        </FormLabel>
+        <Input
+          id="meal_store_index"
+          placeholder="Select a partical Meal in the MealStore. If not given we fetch the zeroth Meal."
+          {...register("meal_store_index")}
+        />
+      </FormControl>
+    </form>
+  );
 
-  const [showingCreateComponent, setShowingCreateComponent] = useState(false);
+  const leftSection = myForm;
+  let rightSection;
 
-  // Don't show the main content if the wallet and site networks mismatch.
-  if (
-    network &&
-    !network.name.toLowerCase().startsWith(state.network_name.toLowerCase())
-  ) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        height="100%"
-      >
-        <Text>
-          Your wallet network is {network.name.toLowerCase()} but you've
-          selected {state.network_name} in the site, please make sure they
-          match.
-        </Text>
+  if (mealStoreIsLoading) {
+    rightSection = <Text>Loading MealStore data...</Text>;
+  } else if (mealStoreError) {
+    rightSection = (
+      <Text>{`Failed to fetch MealStore: ${JSON.stringify(
+        mealStoreError,
+      )}`}</Text>
+    );
+  } else if (mealAddress) {
+    let mealComponent = (
+      <MealDisplay
+        mealAddress={mealAddress}
+        moduleAddress={getValues("module_address")}
+      />
+    );
+    rightSection = (
+      <Box>
+        <Heading size="md" p={3}>
+          Meal Data
+        </Heading>
+        {mealComponent}
       </Box>
     );
   }
 
-  const leftSection = null;
-  const rightSection = null;
-
-  // Note: If there are more tontines than fit in a single screen, they overflow
-  // beyond the end of the sidebar box downward. I have not been able to fix it yet.
   return (
-    <Flex p={3} height="100%" flex="1" overflow="auto">
-      <Box width="21%" borderRight="1px">
+    <Flex flex="1">
+      <Box flex="8" p={5} borderRight="1px">
         {leftSection}
       </Box>
-      <Box width="79%">{rightSection}</Box>
+      <Box flex="9">
+        <Box p={5}>{rightSection}</Box>
+      </Box>
     </Flex>
   );
+};
+
+// Fetch the Meal data and display it.
+export const MealDisplay = ({
+  mealAddress,
+  moduleAddress,
+}: {
+  mealAddress: string | undefined;
+  moduleAddress: string;
+}) => {
+  const {
+    data: mealData,
+    isLoading: mealIsLoading,
+    error: mealError,
+  } = useGetAccountResource(mealAddress!, `${moduleAddress}::food01::Meal`, {
+    enabled: mealAddress !== undefined,
+  });
+
+  const meal:
+    | _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Meal
+    | undefined = mealData ? mealData.resource.jsonDataV1 : undefined;
+
+  let display;
+  if (mealIsLoading) {
+    display = <Text>Loading Meal data...</Text>;
+  } else if (mealError) {
+    display = (
+      <Text>{`Failed to fetch Meal data: ${JSON.stringify(mealError)}`}</Text>
+    );
+  } else {
+    // We don't handle the option case.
+    const proteinAddress = meal!.protein!.inner;
+    const vegetableAddresses = meal!.vegetables!.map((v) => v.inner);
+    const vegetableComponents = vegetableAddresses.map((v) => (
+      <VegetableDisplay vegetableAddress={v} moduleAddress={moduleAddress} />
+    ));
+    display = (
+      <Box p={3}>
+        <Text paddingBottom={3}>{`Name: ${meal!.name}`}</Text>
+        <Text paddingBottom={3}>{`Object address: ${mealAddress}`}</Text>
+        <Text paddingBottom={3}>{`Cost: $${meal!.cost_usd}`}</Text>
+        <Heading paddingTop={5} size="sm">
+          Protein
+        </Heading>
+        <ProteinDisplay
+          proteinAddress={proteinAddress}
+          moduleAddress={moduleAddress}
+        />
+        <Heading paddingTop={6} size="sm">
+          Vegetables
+        </Heading>
+        {vegetableComponents}
+      </Box>
+    );
+  }
+
+  return display;
+};
+
+// Fetch the protein data and display it.
+export const ProteinDisplay = ({
+  proteinAddress,
+  moduleAddress,
+}: {
+  proteinAddress: string | undefined;
+  moduleAddress: string;
+}) => {
+  const {
+    data: proteinData,
+    isLoading: proteinIsLoading,
+    error: proteinError,
+  } = useGetAccountResource(
+    proteinAddress!,
+    `${moduleAddress}::food01::Protein`,
+    { enabled: proteinAddress !== undefined },
+  );
+
+  const protein:
+    | _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Protein
+    | undefined = proteinData ? proteinData.resource.jsonDataV1 : undefined;
+
+  let display;
+  if (proteinIsLoading) {
+    display = <Text>Loading Protein data...</Text>;
+  } else if (proteinError) {
+    display = (
+      <Text>{`Failed to fetch Protein data: ${JSON.stringify(
+        proteinError,
+      )}`}</Text>
+    );
+  } else {
+    let color = protein!.aesthetic_profile.color;
+    display = (
+      <Box p={3}>
+        <Text paddingBottom={3}>{`Name: ${protein!.name}`}</Text>
+        <Text paddingBottom={3}>{`Energy: ${
+          parseInt(protein!.energy_joules) / 1000
+        } kJ`}</Text>
+        <Text paddingBottom={3}>{`Texture: ${
+          protein!.aesthetic_profile.texture
+        }`}</Text>
+        <Text paddingBottom={3}>Color</Text>
+        <Box bg={`rgba(${color.r}, ${color.g}, ${color.b}, 1)`} w={50} h={50} />
+      </Box>
+    );
+  }
+
+  return display;
+};
+
+// Fetch the vegetable data and display it.
+export const VegetableDisplay = ({
+  vegetableAddress,
+  moduleAddress,
+}: {
+  vegetableAddress: string | undefined;
+  moduleAddress: string;
+}) => {
+  const {
+    data: vegetableData,
+    isLoading: vegetableIsLoading,
+    error: vegetableError,
+  } = useGetAccountResource(
+    vegetableAddress!,
+    `${moduleAddress}::food01::Vegetable`,
+    { enabled: vegetableAddress !== undefined },
+  );
+
+  const vegetable:
+    | _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Vegetable
+    | undefined = vegetableData ? vegetableData.resource.jsonDataV1 : undefined;
+
+  let display;
+  if (vegetableIsLoading) {
+    display = <Text>Loading Vegetable data...</Text>;
+  } else if (vegetableError) {
+    display = (
+      <Text>{`Failed to fetch Vegetable data: ${JSON.stringify(
+        vegetableError,
+      )}`}</Text>
+    );
+  } else {
+    let color = vegetable!.aesthetic_profile.color;
+    display = (
+      <Box p={3}>
+        <Text paddingBottom={3}>{`Name: ${vegetable!.name}`}</Text>
+        <Text paddingBottom={3}>{`Fibre: ${parseInt(
+          vegetable!.fibre_grams,
+        )} g`}</Text>
+        <Text paddingBottom={3}>{`Energy: ${
+          parseInt(vegetable!.energy_joules) / 1000
+        } kJ`}</Text>
+        <Text paddingBottom={3}>{`Texture: ${
+          vegetable!.aesthetic_profile.texture
+        }`}</Text>
+        <Text paddingBottom={3}>Color</Text>
+        <Box bg={`rgba(${color.r}, ${color.g}, ${color.b}, 1)`} w={50} h={50} />
+      </Box>
+    );
+  }
+
+  return display;
 };

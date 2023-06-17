@@ -1,8 +1,9 @@
 import { Types } from "aptos";
-import { useQuery } from "react-query";
+import { UseQueryResult, useQuery } from "react-query";
 import { getAccountResource } from "..";
 import { ResponseError } from "../client";
 import { useGlobalState } from "../../GlobalState";
+import { GetAccountResourceQuery } from "../../apiv2/generated/operations";
 
 export type useGetAccountResourceResponse = {
   accountResource: Types.MoveResource | undefined;
@@ -20,10 +21,10 @@ export function useGetAccountResource(
     // the state value given as additionalQueryCriteria changes.
     additionalQueryCriteria?: any;
   } = {},
-): useGetAccountResourceResponse {
+): UseQueryResult<GetAccountResourceQuery> {
   const [state, _setState] = useGlobalState();
 
-  const accountResourcesResult = useQuery<Types.MoveResource, ResponseError>(
+  return useQuery<GetAccountResourceQuery, ResponseError>(
     [
       "accountResource",
       { address },
@@ -33,19 +34,12 @@ export function useGetAccountResource(
     () =>
       getAccountResource(
         { address, resourceType: resource },
-        state.network_value,
+        // We want to hit the GraphQL endpoint.
+        `${state.network_value}/v2`,
       ),
     {
       refetchOnWindowFocus: false,
       enabled: options.enabled,
-      // Refetch every 5 seconds.
-      refetchInterval: 5000,
     },
   );
-
-  const { isLoading, error } = accountResourcesResult;
-
-  const accountResource = accountResourcesResult.data;
-
-  return { accountResource, isLoading, error };
 }
