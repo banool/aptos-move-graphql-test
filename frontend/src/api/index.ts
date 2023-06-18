@@ -32,7 +32,7 @@ export async function getOverallColor(
 ): Promise<_0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Color> {
   const client = new AptosClient(nodeUrl);
   const payload: Types.ViewRequest = {
-    function: `${moduleId}::overall_color`,
+    function: `${moduleId}::food01::overall_color`,
     type_arguments: [],
     arguments: [mealAddress],
   };

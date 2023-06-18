@@ -7,6 +7,14 @@ import {
   Input,
   Heading,
   Divider,
+  Tr,
+  Td,
+  TableContainer,
+  TableCaption,
+  Table,
+  Thead,
+  Tbody,
+  Th,
 } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import { useGetAccountResource } from "../../api/hooks/useGetAccountResource";
@@ -15,7 +23,11 @@ import {
   _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__MealStore,
   _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Protein,
   _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Vegetable,
+  _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Color,
+  _0x1__simple_map__SimpleMap,
+  _0x1__simple_map__Element,
 } from "../../food/generated/types";
+import { useGetOverallColor } from "../../api/hooks/useGetOverallColor";
 
 export const HomePage = () => {
   const {
@@ -24,6 +36,7 @@ export const HomePage = () => {
     formState: { isValid },
   } = useForm();
 
+  // Fetch the MealStore.
   const {
     data: mealStoreData,
     isLoading: mealStoreIsLoading,
@@ -130,6 +143,7 @@ export const MealDisplay = ({
   mealAddress: string | undefined;
   moduleAddress: string;
 }) => {
+  // Fetch the data for the Meal.
   const {
     data: mealData,
     isLoading: mealIsLoading,
@@ -141,6 +155,28 @@ export const MealDisplay = ({
   const meal:
     | _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Meal
     | undefined = mealData ? mealData.resource.jsonDataV1 : undefined;
+
+  // Also fetch the overall color of the Meal. This uses a view function under the hood.
+  const {
+    data: mealColorData,
+    isLoading: mealColorIsLoading,
+    error: mealColorError,
+  } = useGetOverallColor(moduleAddress, mealAddress!, {
+    enabled: meal !== undefined,
+  });
+
+  let colorComponent;
+  if (mealColorIsLoading) {
+    colorComponent = <Text>Loading overall color...</Text>;
+  } else if (mealColorError) {
+    colorComponent = (
+      <Text>{`Failed to fetch overall color: ${JSON.stringify(
+        mealColorError,
+      )}`}</Text>
+    );
+  } else {
+    colorComponent = <ColorDisplay color={mealColorData!} />;
+  }
 
   let display;
   if (mealIsLoading) {
@@ -161,7 +197,11 @@ export const MealDisplay = ({
         <Text paddingBottom={3}>{`Name: ${meal!.name}`}</Text>
         <Text paddingBottom={3}>{`Object address: ${mealAddress}`}</Text>
         <Text paddingBottom={3}>{`Cost: $${meal!.cost_usd}`}</Text>
-        <Heading paddingTop={5} size="sm">
+        <Heading paddingTop={3} paddingBottom={3} size="sm">
+          Popularity by country
+        </Heading>
+        <PopularityDisplay popularity={meal!.popularity_by_country} />
+        <Heading paddingTop={6} size="sm">
           Protein
         </Heading>
         <ProteinDisplay
@@ -172,6 +212,14 @@ export const MealDisplay = ({
           Vegetables
         </Heading>
         {vegetableComponents}
+        <Heading paddingTop={5} paddingBottom={3} size="sm">
+          Overall color
+        </Heading>
+        <Text>
+          The overall color of the meal when you take into account the colors of
+          its ingredients.
+        </Text>
+        <Box paddingTop={3}>{colorComponent}</Box>
       </Box>
     );
   }
@@ -222,13 +270,15 @@ export const ProteinDisplay = ({
           protein!.aesthetic_profile.texture
         }`}</Text>
         <Text paddingBottom={3}>Color</Text>
-        <Box bg={`rgba(${color.r}, ${color.g}, ${color.b}, 1)`} w={50} h={50} />
+        <ColorDisplay color={color} />
       </Box>
     );
   }
 
   return display;
 };
+
+// TODO: Use the view function to get the overall color of the meal.
 
 // Fetch the vegetable data and display it.
 export const VegetableDisplay = ({
@@ -276,10 +326,52 @@ export const VegetableDisplay = ({
           vegetable!.aesthetic_profile.texture
         }`}</Text>
         <Text paddingBottom={3}>Color</Text>
-        <Box bg={`rgba(${color.r}, ${color.g}, ${color.b}, 1)`} w={50} h={50} />
+        <ColorDisplay color={color} />
       </Box>
     );
   }
 
   return display;
+};
+
+export const ColorDisplay = ({
+  color,
+}: {
+  color: _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Color;
+}) => {
+  return (
+    <Box bg={`rgba(${color.r}, ${color.g}, ${color.b}, 1)`} w={50} h={50} />
+  );
+};
+
+// Display the popularity by country. As you can see, the keys and values in SimpleMaps
+// just get resolved to `any` right now because we don't handle generics in the schema
+// generator.
+export const PopularityDisplay = ({
+  popularity,
+}: {
+  popularity: _0x1__simple_map__SimpleMap;
+}) => {
+  let rows = [];
+  for (var element of popularity.data) {
+    rows.push(
+      <Tr>
+        <Td>{element.key}</Td>
+        <Td>{`${element.value}%`}</Td>
+      </Tr>,
+    );
+  }
+  return (
+    <TableContainer>
+      <Table variant="simple">
+        <Thead>
+          <Tr>
+            <Th>Country</Th>
+            <Th>Popularity</Th>
+          </Tr>
+        </Thead>
+        <Tbody>{rows}</Tbody>
+      </Table>
+    </TableContainer>
+  );
 };
