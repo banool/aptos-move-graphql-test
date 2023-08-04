@@ -1,0 +1,20 @@
+[package]
+name = "rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# These two dependencies are necessary for the generated code to compile.
+aptos-move-graphql-scalars = { git = "https://github.com/aptos-labs/aptos-core", branch = "banool/custom-scalars" }
+serde = { version = "1.0.137", features = ["derive"] }
+
+# The rest of these are for querying on chain state.
+anyhow = "1.0.72"
+aptos-sdk = { git = "https://github.com/aptos-labs/aptos-core", branch = "banool/custom-scalars" }
+clap = { version = "4.3.5", features = ["derive"] }
+tokio = { version = "1.21.0", features = ["macros", "rt", "rt-multi-thread"] }
+url = { version = "2.4.0", features = ["serde"] }
+
+[patch.crates-io]
+merlin = { git = "https://github.com/aptos-labs/merlin" }
+
