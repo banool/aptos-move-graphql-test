@@ -3,13 +3,6 @@ import { UseQueryResult, useQuery } from "react-query";
 import { getAccountResource } from "..";
 import { ResponseError } from "../client";
 import { useGlobalState } from "../../GlobalState";
-import { GetAccountResourceQuery } from "../../apiv2/generated/operations";
-
-export type useGetAccountResourceResponse = {
-  accountResource: Types.MoveResource | undefined;
-  isLoading: boolean;
-  error: ResponseError | null;
-};
 
 export function useGetAccountResource(
   address: string,
@@ -21,10 +14,10 @@ export function useGetAccountResource(
     // the state value given as additionalQueryCriteria changes.
     additionalQueryCriteria?: any;
   } = {},
-): UseQueryResult<GetAccountResourceQuery> {
+): UseQueryResult<Types.MoveResource, ResponseError> {
   const [state, _setState] = useGlobalState();
 
-  return useQuery<GetAccountResourceQuery, ResponseError>(
+  return useQuery<Types.MoveResource, ResponseError>(
     [
       "accountResource",
       { address },
@@ -34,8 +27,7 @@ export function useGetAccountResource(
     () =>
       getAccountResource(
         { address, resourceType: resource },
-        // We want to hit the GraphQL endpoint.
-        `${state.network_value}/v2`,
+        state.network_value,
       ),
     {
       refetchOnWindowFocus: false,

@@ -19,13 +19,12 @@ import {
 import { useForm } from "react-hook-form";
 import { useGetAccountResource } from "../../api/hooks/useGetAccountResource";
 import {
-  _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Meal,
-  _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__MealStore,
-  _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Protein,
-  _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Vegetable,
-  _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Color,
-  _0x1__simple_map__SimpleMap,
-  _0x1__simple_map__Element,
+  Meal,
+  MealStore,
+  Protein,
+  Vegetable,
+  Color,
+  SimpleMap,
 } from "../../food/generated/types";
 import { useGetOverallColor } from "../../api/hooks/useGetOverallColor";
 
@@ -47,9 +46,9 @@ export const HomePage = () => {
     { enabled: isValid },
   );
 
-  const mealStore:
-    | _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__MealStore
-    | undefined = mealStoreData ? mealStoreData.resource.jsonDataV1 : undefined;
+  const mealStore: MealStore | undefined = mealStoreData
+    ? (mealStoreData.data as any)
+    : undefined;
 
   const mealStoreIndex = getValues("meal_store_index") || 0;
   const mealAddress = mealStore?.meals[mealStoreIndex].inner;
@@ -88,7 +87,7 @@ export const HomePage = () => {
         </FormLabel>
         <Input
           id="meal_store_index"
-          placeholder="Select a partical Meal in the MealStore. If not given we fetch the zeroth Meal."
+          placeholder="Select a particular Meal in the MealStore. If not given we fetch the zeroth Meal."
           {...register("meal_store_index")}
         />
       </FormControl>
@@ -152,9 +151,7 @@ export const MealDisplay = ({
     enabled: mealAddress !== undefined,
   });
 
-  const meal:
-    | _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Meal
-    | undefined = mealData ? mealData.resource.jsonDataV1 : undefined;
+  const meal: Meal | undefined = mealData ? (mealData.data as any) : undefined;
 
   // Also fetch the overall color of the Meal. This uses a view function under the hood.
   const {
@@ -186,8 +183,10 @@ export const MealDisplay = ({
       <Text>{`Failed to fetch Meal data: ${JSON.stringify(mealError)}`}</Text>
     );
   } else {
-    // We don't handle the option case.
-    const proteinAddress = meal!.protein!.inner;
+    // The schema generator supports representing options as options rather than
+    // structs with a vec inside them, but the API doesn't currently return data
+    // that way, so we don't use that option here for now.
+    const proteinAddress = meal!.protein!.vec[0].inner;
     const vegetableAddresses = meal!.vegetables!.map((v) => v.inner);
     const vegetableComponents = vegetableAddresses.map((v) => (
       <VegetableDisplay vegetableAddress={v} moduleAddress={moduleAddress} />
@@ -245,9 +244,9 @@ export const ProteinDisplay = ({
     { enabled: proteinAddress !== undefined },
   );
 
-  const protein:
-    | _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Protein
-    | undefined = proteinData ? proteinData.resource.jsonDataV1 : undefined;
+  const protein: Protein | undefined = proteinData
+    ? (proteinData.data as any)
+    : undefined;
 
   let display;
   if (proteinIsLoading) {
@@ -298,9 +297,9 @@ export const VegetableDisplay = ({
     { enabled: vegetableAddress !== undefined },
   );
 
-  const vegetable:
-    | _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Vegetable
-    | undefined = vegetableData ? vegetableData.resource.jsonDataV1 : undefined;
+  const vegetable: Vegetable | undefined = vegetableData
+    ? (vegetableData.data as any)
+    : undefined;
 
   let display;
   if (vegetableIsLoading) {
@@ -334,11 +333,7 @@ export const VegetableDisplay = ({
   return display;
 };
 
-export const ColorDisplay = ({
-  color,
-}: {
-  color: _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Color;
-}) => {
+export const ColorDisplay = ({ color }: { color: Color }) => {
   return (
     <Box bg={`rgba(${color.r}, ${color.g}, ${color.b}, 1)`} w={50} h={50} />
   );
@@ -350,7 +345,7 @@ export const ColorDisplay = ({
 export const PopularityDisplay = ({
   popularity,
 }: {
-  popularity: _0x1__simple_map__SimpleMap;
+  popularity: SimpleMap;
 }) => {
   let rows = [];
   for (var element of popularity.data) {

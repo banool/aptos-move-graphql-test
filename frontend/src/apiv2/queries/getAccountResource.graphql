@@ -1,5 +1,0 @@
-query getAccountResource($address: String!, $resourceType: String!) {
-  resource(address: $address, resourceType: $resourceType) {
-    jsonDataV1
-  }
-}

@@ -1,10 +1,7 @@
 import { AptosClient, Types } from "aptos";
 import { withResponseError } from "./client";
-import { _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Color } from "../food/generated/types";
-import { Resource } from "../apiv2/generated/types";
-import { getSdk } from "../apiv2/generated/queries";
+import { Color } from "../food/generated/types";
 import { GraphQLClient } from "graphql-request";
-import { GetAccountResourceQuery } from "../apiv2/generated/operations";
 
 export function getLedgerInfoWithoutResponseError(
   nodeUrl: string,
@@ -17,19 +14,28 @@ export function getAccountResource(
   requestParameters: {
     address: string;
     resourceType: string;
+    ledgerVersion?: number;
   },
   nodeUrl: string,
-): Promise<GetAccountResourceQuery> {
-  const innerClient = new GraphQLClient(nodeUrl);
-  const client = getSdk(innerClient);
-  return client.getAccountResource(requestParameters);
+): Promise<Types.MoveResource> {
+  const client = new AptosClient(nodeUrl);
+  const { address, resourceType, ledgerVersion } = requestParameters;
+  let ledgerVersionBig;
+  if (ledgerVersion !== undefined) {
+    ledgerVersionBig = BigInt(ledgerVersion);
+  }
+  return withResponseError(
+    client.getAccountResource(address, resourceType, {
+      ledgerVersion: ledgerVersionBig,
+    }),
+  );
 }
 
 export async function getOverallColor(
   moduleId: string,
   mealAddress: string,
   nodeUrl: string,
-): Promise<_0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Color> {
+): Promise<Color> {
   const client = new AptosClient(nodeUrl);
   const payload: Types.ViewRequest = {
     function: `${moduleId}::food01::overall_color`,
@@ -37,5 +43,5 @@ export async function getOverallColor(
     arguments: [mealAddress],
   };
   const response = await client.view(payload);
-  return response[0] as _0x988449c911992da70870e7e322ec8715dc930815c818ab1124d3296427136509__food01__Color;
+  return response[0] as Color;
 }
