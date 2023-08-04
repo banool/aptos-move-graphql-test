@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "codegen-example"
+version = "0.1.0"
+description = ""
+authors = ["Daniel Porteous <daniel@dport.me>"]
+readme = "README.md"
+packages = [{include = "codegen_example"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+aptos-sdk = "^0.6.4"
+
+
+[tool.poetry.group.dev.dependencies]
+ariadne-codegen = "^0.7.1"
+gql-schema-codegen = "^1.0.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ariadne-codegen]
+schema_path = "../move/schema.graphql"
